@@ -1,6 +1,15 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/db";
 
+export async function GET() {
+  try {
+    const [rows] = await db.query("SELECT * FROM products");
+    return NextResponse.json(rows);
+  } catch (err) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
 export async function POST(req) {
   try {
     const body = await req.json();
@@ -15,16 +24,5 @@ export async function POST(req) {
   } catch (err) {
     console.error("DB Error:", err);
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
-  }
-}
-
-
-// GET all products
-export async function GET() {
-  try {
-    const [rows] = await db.query("SELECT * FROM products");
-    return NextResponse.json(rows);
-  } catch (err) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

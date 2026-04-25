@@ -1,8 +1,9 @@
+// app/api/products/[id]/route.js
 import db from "@/lib/db";
 
 export async function GET(req, { params }) {
   try {
-    const { id } = await params; // 👈 await params!
+    const { id } = await params;
     
     const [rows] = await db.query(
       "SELECT * FROM products WHERE id = ?",

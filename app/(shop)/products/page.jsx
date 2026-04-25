@@ -38,6 +38,18 @@ export default function ProductsPage() {
     }).then(() => alert(`${product.name} added to cart!`));
   }
 
+  function handleBuyNow(product) {
+    if (!session) {
+      setShowModal(true); // 👈 show modal if not logged in
+      return;
+    }
+    fetch("/api/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ product_id: product.id, quantity: 1 }),
+    }).then(() => router.push("/checkout"));
+  }
+
   if (loading) return <p className="p-8">Loading products...</p>;
 
   return (

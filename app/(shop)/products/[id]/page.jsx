@@ -44,6 +44,23 @@ export default function ProductDetailPage() {
     }
   }
 
+  async function handleBuyNow() {
+    if (!session) {
+      setShowModal(true);
+      return;
+    }
+    const res = await fetch("/api/cart", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ product_id: product.id, quantity }),
+    });
+    const data = await res.json();
+    if (data.success) {
+      router.push("/checkout");
+    }
+    
+  }
+
   if (loading) return <p className="p-8">Loading...</p>;
   if (!product) return <p className="p-8">Product not found.</p>;
 
@@ -93,8 +110,13 @@ export default function ProductDetailPage() {
           <button
             onClick={handleAddToCart}
             className="w-full bg-blue-600 text-white py-3 rounded-xl text-lg hover:bg-blue-700"
-          >
-            Add to Cart
+          > Add to Cart
+          </button>
+
+          <button
+            onClick={handleBuyNow}
+            className="w-full bg-blue-600 text-white py-3 rounded-xl text-lg hover:bg-blue-700"
+          > Buy Now
           </button>
         </div>
       </div>

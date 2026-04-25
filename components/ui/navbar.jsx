@@ -11,12 +11,14 @@ export default function Navbar() {
       <div className="space-x-4 flex items-center">
         <Link href="/" className="hover:text-blue-400">Home</Link>
         <Link href="/cart" className="hover:text-blue-400">Cart</Link>
+        <Link href="/my-orders" className="hover:text-blue-400">My Orders</Link>
 
         {session ? (
           <>
+            <Link href="/sell" className="hover:text-blue-400">Sell</Link> {/* 👈 add this */}
             <span className="text-gray-400 text-sm">Hi, {session.user.name}!</span>
             <button
-              onClick={() => signOut({ callbackUrl: "/" })} // 👈 logout then go to home
+              onClick={() => signOut({ callbackUrl: "/" })}
               className="bg-red-600 px-3 py-1 rounded hover:bg-red-700 text-sm"
             >
               Logout
@@ -24,6 +26,7 @@ export default function Navbar() {
           </>
         ) : (
           <Link href="/login" className="hover:text-blue-400">Login</Link>
+          
         )}
       </div>
     </nav>
