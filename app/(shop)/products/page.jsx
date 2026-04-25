@@ -1,45 +1,91 @@
 "use client";
-import { useState } from "react";
-import Input from "@/components/ui/input";
-import Button from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import ProductCard from "@/components/ProductCard";
 
-export default function AddProductPage() {
-  const [form, setForm] = useState({
-    name: "",
-    description: "",
-    price: "",
-    image_url: ""
-  });
+export default function ProductsPage() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const { data: session } = useSession();
+  const router = useRouter();
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  useEffect(() => {
+    async function fetchProducts() {
+      try {
+        const res = await fetch("/api/products");
+        const data = await res.json();
+        setProducts(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchProducts();
+  }, []);
 
-    const res = await fetch("/api/products", {
+  function handleAddToCart(product) {
+    if (!session) {
+      setShowModal(true); // 👈 show modal if not logged in
+      return;
+    }
+    fetch("/api/cart", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-
-    if (!res.ok) {
-      const text = await res.text(); // debug raw response
-      console.error("Server returned:", text);
-    } else {
-      const data = await res.json();
-      console.log("Product added:", data);
-      alert("Product added successfully!");
-    }
+      body: JSON.stringify({ product_id: product.id, quantity: 1 }),
+    }).then(() => alert(`${product.name} added to cart!`));
   }
 
+  if (loading) return <p className="p-8">Loading products...</p>;
+
   return (
-    <div className="max-w-lg mx-auto p-6 bg-blue-900 shadow rounded">
-      <h1 className="text-2xl font-bold mb-4">Add a New Product</h1>
-      <form className="space-y-4" onSubmit={handleSubmit}>
-        <Input placeholder="Product Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <Input placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-        <Input type="number" placeholder="Price" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
-        <Input placeholder="Image URL" value={form.image_url} onChange={(e) => setForm({ ...form, image_url: e.target.value })} />
-        <Button type="submit">Add Product</Button>
-      </form>
-    </div>
+    <main className="p-8">
+      <h1 className="text-2xl font-medium mb-6">All Products</h1>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {products.map((product) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            onAddToCart={() => handleAddToCart(product)} // 👈 cart handler
+            onClick={() => router.push(`/products/${product.id}`)} // 👈 click to view
+          />
+        ))}
+      </div>
+
+      {/* Login Modal */}
+      {showModal && (
+        <div
+          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
+          onClick={() => setShowModal(false)}
+        >
+          <div
+            className="bg-white rounded-xl p-8 w-80 text-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg font-medium mb-2">Sign in to continue</h2>
+            <p className="text-gray-500 text-sm mb-6">
+              You need to be logged in to add items to your cart.
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => router.push("/login")}
+                className="bg-black text-white py-2 rounded-lg"
+              >
+                Sign in
+              </button>
+              <button
+                onClick={() => setShowModal(false)}
+                className="border border-gray-300 py-2 rounded-lg"
+              >
+                Continue browsing
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </main>
   );
 }
