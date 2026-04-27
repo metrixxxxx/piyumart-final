@@ -41,7 +41,7 @@ export default function ProductCard({ product }) {
     }
   }
 
-  // ✅ BUY NOW (FIXED — outside function)
+  //  BUY NOW 
   async function handleBuyNow(e) {
     e.stopPropagation();
 
@@ -82,12 +82,12 @@ export default function ProductCard({ product }) {
         <div className="flex-1 mt-2">
   <h2 className="text-lg font-semibold">{product.name}</h2>
   <p className="text-sm text-gray-600 line-clamp-3">{product.description}</p>
-  <p className="text-md font-bold mt-2">${product.price}</p>
+  <p className="text-md font-bold mt-2">₱{product.price.toLocaleString()}</p>
   <p className="text-xs text-gray-400 mt-1">Sold by: {product.seller_name || "Unknown"}</p> {/* 👈 add this */}
 </div>
 
         {/* ✅ BUTTONS (FIXED LAYOUT) */}
-        <div className="flex gap-2 mt-auto">
+        <div className="flex gap-4 mt-auto">
           <button
             onClick={handleAddToCart}
             disabled={loading}

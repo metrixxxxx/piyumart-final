@@ -74,3 +74,24 @@ export async function POST(req) {
     return Response.json({ error: err.message }, { status: 500 });
   }
 }
+export async function DELETE(req) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session) {
+      return Response.json({ error: "Not logged in" }, { status: 401 });
+    }
+
+    const { cart_item_id } = await req.json();
+
+    await db.query(
+      "DELETE FROM cart_items WHERE id = ?",
+      [cart_item_id]
+    );
+
+    return Response.json({ success: true });
+  } catch (err) {
+    console.error("DELETE /api/cart error:", err);
+    return Response.json({ error: err.message }, { status: 500 });
+  }
+}

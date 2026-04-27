@@ -19,3 +19,20 @@ export async function GET(req) {
 
   return Response.json(rows);
 }
+export async function DELETE(req) {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  if (session.user?.email !== process.env.ADMIN_EMAIL) {
+    return new Response("Forbidden", { status: 403 });
+  }
+
+  const { id } = await req.json();
+
+  await db.query("DELETE FROM products WHERE id = ?", [id]);
+
+  return Response.json({ success: true });
+}

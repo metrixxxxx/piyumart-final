@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import ProductCard from "@/components/products/product-card"; // 👈 tamang path
+import ProductCard from "@/components/products/product-card";
 
 export default function HomePage() {
   const [products, setProducts] = useState([]);
@@ -13,7 +13,16 @@ export default function HomePage() {
       try {
         const res = await fetch("/api/products");
         const data = await res.json();
-        setProducts(Array.isArray(data) ? data : []);
+        const allProducts = Array.isArray(data) ? data : [];
+
+        // 👇 seller_id (underscore) at String() para walang type mismatch
+        const filtered = session?.user?.id
+          ? allProducts.filter(
+              (p) => String(p.seller_id) !== String(session.user.id)
+            )
+          : allProducts;
+
+        setProducts(filtered);
       } catch (err) {
         console.error(err);
       } finally {
@@ -21,7 +30,7 @@ export default function HomePage() {
       }
     }
     fetchProducts();
-  }, []);
+  }, [session]); // 👈 [session] hindi [] 
 
   return (
     <main className="p-8">
@@ -46,7 +55,7 @@ export default function HomePage() {
       ) : products.length === 0 ? (
         <p className="text-gray-500">No products available yet.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
           {products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}

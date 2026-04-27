@@ -6,17 +6,36 @@ import ProductCard from "@/components/ProductCard";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null); // null = All
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const { data: session } = useSession();
   const router = useRouter();
 
   useEffect(() => {
+    async function fetchCategories() {
+      const res = await fetch("/api/categories");
+      const data = await res.json();
+      setCategories(Array.isArray(data) ? data : []);
+    }
+    fetchCategories();
+  }, []);
+
+  useEffect(() => {
     async function fetchProducts() {
       try {
         const res = await fetch("/api/products");
         const data = await res.json();
-        setProducts(Array.isArray(data) ? data : []);
+        const allProducts = Array.isArray(data) ? data : [];
+
+        const filtered = session?.user?.id
+          ? allProducts.filter(
+              (p) => String(p.seller_id) !== String(session.user.id)
+            )
+          : allProducts;
+
+        setProducts(filtered);
       } catch (err) {
         console.error(err);
       } finally {
@@ -24,13 +43,15 @@ export default function ProductsPage() {
       }
     }
     fetchProducts();
-  }, []);
+  }, [session]);
+
+  // Filter by selected category (client-side)
+  const visibleProducts = selectedCategory
+    ? products.filter((p) => String(p.category_id) === String(selectedCategory))
+    : products;
 
   function handleAddToCart(product) {
-    if (!session) {
-      setShowModal(true); // 👈 show modal if not logged in
-      return;
-    }
+    if (!session) { setShowModal(true); return; }
     fetch("/api/cart", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -39,10 +60,7 @@ export default function ProductsPage() {
   }
 
   function handleBuyNow(product) {
-    if (!session) {
-      setShowModal(true); // 👈 show modal if not logged in
-      return;
-    }
+    if (!session) { setShowModal(true); return; }
     fetch("/api/products", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -56,16 +74,48 @@ export default function ProductsPage() {
     <main className="p-8">
       <h1 className="text-2xl font-medium mb-6">All Products</h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {products.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            onAddToCart={() => handleAddToCart(product)} // 👈 cart handler
-            onClick={() => router.push(`/products/${product.id}`)} // 👈 click to view
-          />
+      {/* Category Filter */}
+      <div className="flex gap-2 flex-wrap mb-6">
+        <button
+          onClick={() => setSelectedCategory(null)}
+          className={`px-4 py-1.5 rounded-full text-sm border transition ${
+            selectedCategory === null
+              ? "bg-black text-white border-black"
+              : "bg-white text-gray-600 border-gray-300 hover:border-black"
+          }`}
+        >
+          All
+        </button>
+        {categories.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => setSelectedCategory(cat.id)}
+            className={`px-4 py-1.5 rounded-full text-sm border transition ${
+              selectedCategory === cat.id
+                ? "bg-black text-white border-black"
+                : "bg-white text-gray-600 border-gray-300 hover:border-black"
+            }`}
+          >
+            {cat.name}
+          </button>
         ))}
       </div>
+
+      {/* Products Grid */}
+      {visibleProducts.length === 0 ? (
+        <p className="text-gray-500">No products found in this category.</p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {visibleProducts.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              onAddToCart={() => handleAddToCart(product)}
+              onClick={() => router.push(`/products/${product.id}`)}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Login Modal */}
       {showModal && (

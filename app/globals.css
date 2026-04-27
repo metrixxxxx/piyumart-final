@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -15,16 +14,32 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    
-  
   }
 }
 
 body {
-  
-  background-image: url('/img/lspu.jpg');
+  background-image: url('/img/lspu logo malupit.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
 }
 
+/* 👇 Shimmer animation */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmer 1.5s infinite;
+}
+
+/* NProgress bar */
+#nprogress .bar {
+  background: #2563eb !important;
+  height: 3px !important;
+}
+#nprogress .peg {
+  box-shadow: 0 0 10px #2563eb, 0 0 5px #2563eb !important;
+}

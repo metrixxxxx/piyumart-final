@@ -7,7 +7,9 @@ export async function DELETE(req, { params }) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  await db.query("DELETE FROM products WHERE id = ?", [params.id]);
+  const { id } = await params; // 👈 await
+
+  await db.query("DELETE FROM products WHERE id = ?", [id]);
 
   return Response.json({ message: "Deleted" });
 }
@@ -18,11 +20,13 @@ export async function PUT(req, { params }) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { id } = await params; // 👈 await
+
   const { name, price, stock } = await req.json();
 
   await db.query(
     "UPDATE products SET name=?, price=?, stock=? WHERE id=?",
-    [name, price, stock, params.id]
+    [name, price, stock, id]
   );
 
   return Response.json({ message: "Updated" });

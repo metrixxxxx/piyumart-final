@@ -8,6 +8,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedProducts, setSelectedProducts] = useState([]); // 👈 new
   const router = useRouter();
 
   useEffect(() => {
@@ -48,10 +49,47 @@ export default function AdminDashboard() {
     router.push("/admin/login");
   }
 
+  // ----------------------------
+  // SINGLE DELETE PRODUCT
+  // ----------------------------
   async function handleDeleteProduct(id) {
     if (!confirm("Delete this product?")) return;
     await fetch(`/api/admin/products/${id}`, { method: "DELETE" });
+    setSelectedProducts((prev) => prev.filter((sid) => sid !== id));
     fetchData();
+  }
+
+  // ----------------------------
+  // BULK DELETE PRODUCTS
+  // ----------------------------
+  async function handleBulkDeleteProducts() {
+    if (selectedProducts.length === 0) return;
+    if (!confirm(`Delete ${selectedProducts.length} selected product(s)?`)) return;
+
+    await Promise.all(
+      selectedProducts.map((id) =>
+        fetch(`/api/admin/products/${id}`, { method: "DELETE" })
+      )
+    );
+    setSelectedProducts([]);
+    fetchData();
+  }
+
+  // ----------------------------
+  // CHECKBOX HANDLERS
+  // ----------------------------
+  function toggleSelectProduct(id) {
+    setSelectedProducts((prev) =>
+      prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
+    );
+  }
+
+  function toggleSelectAllProducts() {
+    if (selectedProducts.length === products.length) {
+      setSelectedProducts([]);
+    } else {
+      setSelectedProducts(products.map((p) => p.id));
+    }
   }
 
   async function handleDeleteUser(id) {
@@ -126,7 +164,7 @@ export default function AdminDashboard() {
                   <p className="text-gray-400 text-xs">{order.buyer_email}</p>
                 </td>
                 <td className="p-4 text-gray-500">{order.address}</td>
-                <td className="p-4 font-bold">${Number(order.total).toLocaleString()}</td>
+                <td className="p-4 font-bold">₱{Number(order.total).toLocaleString()}</td>
                 <td className="p-4 uppercase text-xs">{order.payment_method}</td>
                 <td className="p-4">
                   <select
@@ -154,11 +192,30 @@ export default function AdminDashboard() {
       </div>
 
       {/* Products Table */}
-      <h2 className="text-xl font-semibold mb-4">All Products</h2>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-semibold">All Products</h2>
+        {/* 👇 Bulk delete button — lalabas lang kapag may selected */}
+        {selectedProducts.length > 0 && (
+          <button
+            onClick={handleBulkDeleteProducts}
+            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm"
+          >
+            Delete Selected ({selectedProducts.length})
+          </button>
+        )}
+      </div>
       <div className="bg-white rounded-xl border overflow-hidden mb-8">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b">
             <tr>
+              {/* 👇 Select All checkbox */}
+              <th className="p-4 w-8">
+                <input
+                  type="checkbox"
+                  checked={selectedProducts.length === products.length && products.length > 0}
+                  onChange={toggleSelectAllProducts}
+                />
+              </th>
               <th className="text-left p-4">Product</th>
               <th className="text-left p-4">Price</th>
               <th className="text-left p-4">Seller</th>
@@ -167,7 +224,20 @@ export default function AdminDashboard() {
           </thead>
           <tbody>
             {products.map((product) => (
-              <tr key={product.id} className="border-b hover:bg-gray-50">
+              <tr
+                key={product.id}
+                className={`border-b hover:bg-gray-50 ${
+                  selectedProducts.includes(product.id) ? "bg-red-50" : ""
+                }`}
+              >
+                {/* 👇 Per item checkbox */}
+                <td className="p-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedProducts.includes(product.id)}
+                    onChange={() => toggleSelectProduct(product.id)}
+                  />
+                </td>
                 <td className="p-4 flex items-center gap-3">
                   <img
                     src={product.image_url || "/placeholder.png"}
@@ -175,7 +245,7 @@ export default function AdminDashboard() {
                   />
                   {product.name}
                 </td>
-                <td className="p-4">${product.price}</td>
+                <td className="p-4">₱{product.price}</td>
                 <td className="p-4">{product.seller_name || "N/A"}</td>
                 <td className="p-4">
                   <button
