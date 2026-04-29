@@ -1,5 +1,5 @@
 // app/api/cart/route.js
-import db from '@/lib/db';                          // 👈 missing
+import { db } from "@/lib/db";                        // 👈 missing
 import { getServerSession } from 'next-auth';        // 👈 missing
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'; // 👈 missing
 

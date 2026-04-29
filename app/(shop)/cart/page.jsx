@@ -121,116 +121,174 @@ export default function CartPage() {
     .filter((item) => selectedItems.includes(item.id))
     .reduce((sum, item) => sum + item.price * item.quantity, 0);
 
+    const btnBlue = {
+  background: "#1a1a2e",
+  color: "#fff",
+  padding: "6px 10px",
+  borderRadius: "8px",
+  fontSize: "12px",
+  border: "none",
+  cursor: "pointer",
+};
+
+const btnRed = {
+  background: "#e94560",
+  color: "#fff",
+  padding: "6px 10px",
+  borderRadius: "8px",
+  fontSize: "12px",
+  border: "none",
+  cursor: "pointer",
+};
+
+const btnGreen = {
+  background: "#198754",
+  color: "#fff",
+  padding: "6px 10px",
+  borderRadius: "8px",
+  fontSize: "12px",
+  border: "none",
+  cursor: "pointer",
+};
+
   return (
-    <main className="p-8">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Your Cart</h1>
-        {selectedItems.length > 0 && (
-          <button
-            onClick={handleBulkRemove}
-            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm"
-          >
-            Remove Selected ({selectedItems.length})
-          </button>
-        )}
-      </div>
+  <main style={{ background: "#f8f7f4", minHeight: "100vh" }}>
+
+    {/* HERO */}
+    <section
+      style={{
+        background: "#1a1a2e",
+        color: "#fff",
+        padding: "50px 20px",
+        textAlign: "center",
+      }}
+    >
+      <h1 style={{ fontSize: "32px", fontWeight: "700" }}>Your Cart</h1>
+      <p style={{ opacity: 0.6, marginTop: "6px" }}>
+        Review items before checkout
+      </p>
+    </section>
+
+    {/* CONTENT */}
+    <section
+      style={{
+        maxWidth: "1000px",
+        margin: "0 auto",
+        padding: "40px 20px",
+      }}
+    >
 
       {cart.length === 0 ? (
-        <p className="text-gray-600">Your cart is empty.</p>
+        <p style={{ color: "#777" }}>Your cart is empty.</p>
       ) : (
         <>
-          {/* Select All */}
-          <div className="flex items-center gap-2 mb-4">
-            <input
-              type="checkbox"
-              checked={selectedItems.length === cart.length && cart.length > 0}
-              onChange={toggleSelectAll}
-              id="selectAll"
-            />
-            <label htmlFor="selectAll" className="text-sm text-gray-600 cursor-pointer">
+          {/* SELECT ALL */}
+          <div style={{ marginBottom: "16px", fontSize: "14px" }}>
+            <label>
+              <input
+                type="checkbox"
+                checked={selectedItems.length === cart.length && cart.length > 0}
+                onChange={toggleSelectAll}
+              />{" "}
               Select All
             </label>
           </div>
 
-          <ul className="space-y-4">
+          {/* CART ITEMS */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {cart.map((item) => (
-              <li
+              <div
                 key={item.id}
-                className={`flex items-center justify-between border-b pb-4 ${
-                  selectedItems.includes(item.id) ? "bg-blue-50 rounded-lg px-2" : ""
-                }`}
+                style={{
+                  background: "#fff",
+                  border: "1px solid #eee",
+                  borderRadius: "12px",
+                  padding: "14px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
               >
-                <div className="flex items-center space-x-4">
+                <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
                   <input
                     type="checkbox"
                     checked={selectedItems.includes(item.id)}
                     onChange={() => toggleSelectItem(item.id)}
                   />
+
                   <img
-                    src={item.image_url || "https://via.placeholder.com/150"}
-                    alt={item.name}
-                    className="w-20 h-20 object-cover rounded"
+                    src={item.image_url || "https://via.placeholder.com/80"}
+                    style={{
+                      width: "70px",
+                      height: "70px",
+                      objectFit: "cover",
+                      borderRadius: "10px",
+                    }}
                   />
+
                   <div>
-                    <h2 className="font-semibold">{item.name}</h2>
-                    <p className="text-gray-600">₱{item.price}</p>
-                    <p className="text-sm">Qty: {item.quantity}</p>
+                    <h3 style={{ fontWeight: "600" }}>{item.name}</h3>
+                    <p style={{ fontSize: "12px", color: "#777" }}>
+                      Qty: {item.quantity}
+                    </p>
+                    <p style={{ color: "#e94560", fontWeight: "700" }}>
+                      ₱{item.price}
+                    </p>
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleBuyNow(item)}
-                    className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                  >
-                    Buy Now
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button style={btnBlue} onClick={() => handleBuyNow(item)}>
+                    Buy
                   </button>
-                  <button
-                    onClick={() => handleRemove(item.id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-                  >
+                  <button style={btnRed} onClick={() => handleRemove(item.id)}>
                     Remove
                   </button>
                 </div>
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
 
-          {/* Total + Checkout buttons */}
-          <div className="mt-6 flex justify-between items-center">
+          {/* TOTAL SECTION */}
+          <div
+            style={{
+              marginTop: "30px",
+              background: "#fff",
+              border: "1px solid #eee",
+              borderRadius: "12px",
+              padding: "18px",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
             <div>
-              <h2 className="text-xl font-bold">Total: ₱{totalPrice.toLocaleString()}</h2>
+              <h2 style={{ fontSize: "18px", fontWeight: "700" }}>
+                ₱{totalPrice.toLocaleString()}
+              </h2>
+
               {selectedItems.length > 0 && (
-                <p className="text-sm text-blue-600 mt-1">
+                <p style={{ fontSize: "12px", color: "#777" }}>
                   Selected: ₱{selectedTotal.toLocaleString()}
                 </p>
               )}
             </div>
 
-            <div className="flex gap-2">
-              {/* Checkout Selected — lalabas lang kapag may selected */}
+            <div style={{ display: "flex", gap: "10px" }}>
               {selectedItems.length > 0 && (
-                <button
-                  onClick={handleCheckoutSelected}
-                  className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700"
-                >
-                  Checkout Selected ({selectedItems.length})
+                <button style={btnBlue} onClick={handleCheckoutSelected}>
+                  Checkout Selected
                 </button>
               )}
 
-              {/* Checkout All — lagi nandito */}
-              <button
-                onClick={handleCheckout}
-                disabled={cart.length === 0}
-                className="bg-green-600 text-white px-5 py-2 rounded hover:bg-green-700 disabled:bg-gray-400"
-              >
+              <button style={btnGreen} onClick={handleCheckout}>
                 Checkout All
               </button>
             </div>
           </div>
         </>
       )}
-    </main>
-  );
+    </section>
+  </main>
+);
 }

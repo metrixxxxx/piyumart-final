@@ -1,4 +1,4 @@
-import db from "@/lib/db";
+import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin";
 
 // GET — all orders

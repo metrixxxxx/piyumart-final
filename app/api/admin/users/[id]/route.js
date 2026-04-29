@@ -1,4 +1,4 @@
-import db from "@/lib/db";
+import { db } from "@/lib/db";
 import { cookies } from "next/headers";
 
 export async function DELETE(req, { params }) {

@@ -245,16 +245,33 @@ export default function AdminDashboard() {
                   />
                   {product.name}
                 </td>
-                <td className="p-4">₱{product.price}</td>
-                <td className="p-4">{product.seller_name || "N/A"}</td>
-                <td className="p-4">
-                  <button
-                    onClick={() => handleDeleteProduct(product.id)}
-                    className="text-red-500 hover:underline text-sm"
-                  >
-                    Delete
-                  </button>
-                </td>
+                <td className="p-4 flex gap-3 items-center">
+  <button
+    onClick={() => handleDeleteProduct(product.id)}
+    className="text-red-500 hover:underline text-sm"
+  >
+    Delete
+  </button>
+
+  <button
+    onClick={async () => {
+      await fetch("/api/admin/products/feature", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: product.id }),
+      });
+
+      fetchData(); // refresh table
+    }}
+    className={`text-sm px-2 py-1 rounded ${
+      product.is_featured
+        ? "bg-yellow-400 text-black"
+        : "bg-gray-200"
+    }`}
+  >
+    {product.is_featured ? "Featured ⭐" : "Feature"}
+  </button>
+</td>
               </tr>
             ))}
           </tbody>

@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import db from "@/lib/db";
+import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 // PATCH — accept or reject a seller

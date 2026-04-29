@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
-import db from "@/lib/db";
+import { db } from "@/lib/db";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -31,4 +31,15 @@ export async function GET() {
   } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
+}
+
+async function toggleFeatured(id) {
+  await fetch("/api/products/feature", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id }),
+  });
+
+  // refresh page or re-fetch products
+  window.location.reload();
 }

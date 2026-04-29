@@ -1,4 +1,4 @@
-import db from "@/lib/db";
+import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin";
 
 export async function PUT(req, { params }) {

@@ -27,55 +27,90 @@ export default function OrdersPage() {
     return <p className="p-8">Loading orders...</p>;
 
   return (
-    <main className="p-8 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">My Orders</h1>
+  <main style={{ background: "#f8f7f4", minHeight: "100vh" }}>
+
+    {/* HERO */}
+    <section
+      style={{
+        background: "#1a1a2e",
+        color: "#fff",
+        padding: "50px 20px",
+        textAlign: "center",
+      }}
+    >
+      <h1 style={{ fontSize: "32px", fontWeight: "700" }}>My Orders</h1>
+      <p style={{ opacity: 0.6, marginTop: "6px" }}>
+        Track your purchases
+      </p>
+    </section>
+
+    {/* CONTENT */}
+    <section
+      style={{
+        maxWidth: "900px",
+        margin: "0 auto",
+        padding: "40px 20px",
+      }}
+    >
 
       {orders.length === 0 ? (
-        <p className="text-gray-500">You have no orders yet.</p>
+        <p style={{ color: "#777" }}>No orders yet.</p>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {orders.map((order) => (
-            <div key={order.id} className="bg-white rounded-xl border p-6">
-              <div className="flex justify-between items-center mb-4">
-                <div>
-                  <p className="font-semibold">Order #{order.id}</p>
-                  <p className="text-sm text-gray-500">
-                    {new Date(order.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  order.status === "pending"
-                    ? "bg-yellow-100 text-yellow-600"
-                    : order.status === "completed"
-                    ? "bg-green-100 text-green-600"
-                    : "bg-red-100 text-red-600"
-                }`}>
+            <div
+              key={order.id}
+              style={{
+                background: "#fff",
+                border: "1px solid #eee",
+                borderRadius: "12px",
+                padding: "16px",
+              }}
+            >
+
+              {/* HEADER */}
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: "10px",
+                }}
+              >
+                <h3 style={{ fontWeight: "700" }}>
+                  Order #{order.id}
+                </h3>
+
+                <span
+                  style={{
+                    fontSize: "12px",
+                    padding: "4px 10px",
+                    borderRadius: "999px",
+                    background:
+                      order.status === "pending"
+                        ? "#fff3cd"
+                        : order.status === "completed"
+                        ? "#d4edda"
+                        : "#f8d7da",
+                  }}
+                >
                   {order.status}
                 </span>
               </div>
 
-              <div className="border-t pt-4">
-                <div className="flex justify-between text-sm text-gray-500 mb-1">
-                  <span>Name:</span>
-                  <span>{order.name}</span>
-                </div>
-                <div className="flex justify-between text-sm text-gray-500 mb-1">
-                  <span>Address:</span>
-                  <span>{order.address}</span>
-                </div>
-                <div className="flex justify-between text-sm text-gray-500 mb-1">
-                  <span>Payment:</span>
-                  <span className="uppercase">{order.payment_method}</span>
-                </div>
-                <div className="flex justify-between font-bold mt-3 text-lg">
-                  <span>Total</span>
-                  <span>${Number(order.total).toLocaleString()}</span>
-                </div>
-              </div>
+              {/* INFO */}
+              <p style={{ fontSize: "13px", color: "#777" }}>
+                {order.name} • {order.address}
+              </p>
+
+              {/* TOTAL */}
+              <p style={{ marginTop: "10px", fontWeight: "700", color: "#e94560" }}>
+                ₱{Number(order.total).toLocaleString()}
+              </p>
             </div>
           ))}
         </div>
       )}
-    </main>
-  );
+    </section>
+  </main>
+);
 }

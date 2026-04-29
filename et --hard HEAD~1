@@ -1,0 +1,35 @@
+[33mcommit 9dc025b6afdce457d471a73ed8fcbcb765a94877[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: earl <alvarezmatrix1@gmail.com>
+Date:   Mon Apr 27 23:18:39 2026 +0800
+
+    changes sa separations na binebenta ni seller(user) di makikita sa homepage tas categories
+
+[33mcommit d9dc18b114c56617fe48b8294d4a9c5ccbaa3350[m
+Author: earl <alvarezmatrix1@gmail.com>
+Date:   Sun Apr 26 04:47:02 2026 +0800
+
+    dashboards update, admin page(separate admin login page)
+
+[33mcommit 8a8c249163f31716e5ae9e9e30368d04c15caeac[m
+Author: earl <alvarezmatrix1@gmail.com>
+Date:   Sat Apr 25 13:44:02 2026 +0800
+
+    updated na yung landing page and same lang abt dun sa cart
+
+[33mcommit e5caad2713c2d0cfa47867d16921532b3a11fdaa[m
+Author: earl <alvarezmatrix1@gmail.com>
+Date:   Sat Apr 25 13:03:24 2026 +0800
+
+    inayos ko yung auth tsaka yung login/register page. every user iba iba na cart
+
+[33mcommit 51f87c76f770b02d34ebc36f51b39257404ffe28[m
+Author: earl <alvarezmatrix1@gmail.com>
+Date:   Thu Apr 23 20:41:24 2026 +0800
+
+    initial project upload
+
+[33mcommit 07eed5a51fdc2eb457df3b26fada6dbdd479acc8[m
+Author: earl <alvarezmatrix1@gmail.com>
+Date:   Wed Apr 22 21:33:04 2026 +0800
+
+    Initial commit from Create Next App
