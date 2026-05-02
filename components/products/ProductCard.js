@@ -136,6 +136,7 @@ export default function ProductCard({ product }) {
                 fontSize: "12px",
                 cursor: "pointer",
                 opacity: loading ? 0.6 : 1,
+                marginRight: "4px",
               }}
             >
               {loading ? "..." : "Add"}
@@ -153,9 +154,11 @@ export default function ProductCard({ product }) {
                 color: "#1a1a2e",
                 fontSize: "12px",
                 cursor: "pointer",
+                marginLeft: "4px",
+                opacity: loading ? 0.6 : 1,
               }}
             >
-              
+              {loading ? "..." : "Buy Now"}
             </button>
           </div>
         </div>

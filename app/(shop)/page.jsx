@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
-import ProductCard from "@/components/products/product-card";
+import ProductCard from "@/components/products/ProductCard";
 import HeroSlider from "@/components/HeroSlider";
 
 export default function HomePage() {
