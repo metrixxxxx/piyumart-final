@@ -7,15 +7,15 @@ export async function GET() {
     const session = await getServerSession(authOptions);
     if (!session) return Response.json({ error: "Not logged in" }, { status: 401 });
 
-    const [rows] = await db.query(
-  `SELECT p.*, c.name as category_name 
+   const [rows] = await db.query(
+  `SELECT p.*, p.STOCK as stock, c.name as category_name 
    FROM products p
    LEFT JOIN categories c ON p.category_id = c.id
    WHERE p.seller_id = ?`,
   [session.user.id]
 );
+    
 
-    // Fetch attributes for each product
     const productsWithAttributes = await Promise.all(
       rows.map(async (product) => {
         const [attrs] = await db.query(
@@ -40,17 +40,15 @@ export async function POST(req) {
     const session = await getServerSession(authOptions);
     if (!session) return Response.json({ error: "Not logged in" }, { status: 401 });
 
-    const { name, description, price, image_url, category_id, attributes } = await req.json();
+    const { name, description, price, image_url, category_id, attributes, stock } = await req.json();
 
-    // Insert product
     const [result] = await db.query(
-      "INSERT INTO products (name, description, price, image_url, seller_id, seller_name, category_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [name, description, price, image_url, session.user.id, session.user.name, category_id]
+      "INSERT INTO products (name, description, price, image_url, seller_id, seller_name, category_id, stock, is_visible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)",
+      [name, description, price, image_url, session.user.id, session.user.name, category_id, stock ?? 0]
     );
 
     const product_id = result.insertId;
 
-    // Insert attributes
     if (attributes && attributes.length > 0) {
       await Promise.all(
         attributes.map(({ attribute_definition_id, value }) => {
@@ -74,15 +72,13 @@ export async function PUT(req) {
     const session = await getServerSession(authOptions);
     if (!session) return Response.json({ error: "Not logged in" }, { status: 401 });
 
-    const { id, name, description, price, image_url, category_id, attributes } = await req.json();
+    const { id, name, description, price, image_url, category_id, attributes, stock, is_visible } = await req.json();
 
-    // Update product
     await db.query(
-      "UPDATE products SET name=?, description=?, price=?, image_url=?, category_id=? WHERE id=? AND seller_id=?",
-      [name, description, price, image_url, category_id, id, session.user.id]
+      "UPDATE products SET name=?, description=?, price=?, image_url=?, category_id=?, stock=?, is_visible=? WHERE id=? AND seller_id=?",
+      [name, description, price, image_url, category_id, stock ?? 0, is_visible ?? 1, id, session.user.id]
     );
 
-    // Delete old attributes then re-insert
     await db.query("DELETE FROM product_attributes WHERE product_id = ?", [id]);
 
     if (attributes && attributes.length > 0) {
@@ -110,11 +106,7 @@ export async function DELETE(req) {
 
     const { id } = await req.json();
 
-    // Attributes auto-deleted via ON DELETE CASCADE
-    await db.query(
-      "DELETE FROM products WHERE id=? AND seller_id=?",
-      [id, session.user.id]
-    );
+    await db.query("DELETE FROM products WHERE id=? AND seller_id=?", [id, session.user.id]);
 
     return Response.json({ success: true });
   } catch (err) {

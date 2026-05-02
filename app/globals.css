@@ -13,7 +13,7 @@
 
 /* GLOBAL RESET */
 body {
-  background: var(--bg);
+  background-color: var(--bg);
   color: var(--text);
   font-family: system-ui, sans-serif;
 }

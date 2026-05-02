@@ -1,17 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function CheckoutPage() {
+// ✅ All useSearchParams logic lives inside this component
+function CheckoutContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const productId = searchParams.get("productId");
   const isBuyNow = Boolean(productId);
-  const quantity = parseInt(searchParams.get("quantity") || "1"); // 👈 new
+  const quantity = parseInt(searchParams.get("quantity") || "1");
 
   const [product, setProduct] = useState(null);
   const [cartItems, setCartItems] = useState([]);
@@ -22,8 +23,6 @@ export default function CheckoutPage() {
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cod");
-
-  
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -45,9 +44,7 @@ export default function CheckoutPage() {
           const source = searchParams.get("source");
           if (source === "selected") {
             const stored = sessionStorage.getItem("selectedCartItems");
-            if (stored) {
-              setCartItems(JSON.parse(stored));
-            }
+            if (stored) setCartItems(JSON.parse(stored));
           } else {
             const res = await fetch("/api/cart");
             const data = await res.json();
@@ -67,33 +64,27 @@ export default function CheckoutPage() {
   }, [status, isBuyNow, productId, session, searchParams]);
 
   const items =
-  isBuyNow && product
-    ? [{ ...product, quantity }] // 👈 yung quantity sa URL na, hindi na 1
-    : cartItems;
+    isBuyNow && product
+      ? [{ ...product, quantity }]
+      : cartItems;
 
-  const total = items.reduce(
-    (sum, item) => sum + item.price * item.quantity,
-    0
-  );
+  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   async function handleSubmit() {
     if (!name || !email || !address) {
       alert("Please fill in all fields!");
       return;
     }
-
     if (!email.endsWith("@lspu.edu.ph")) {
       alert("Please use your LSPU email (@lspu.edu.ph)!");
       return;
     }
-
     if (items.length === 0) {
       alert("No items to checkout!");
       return;
     }
 
     setSubmitting(true);
-
     try {
       for (const item of items) {
         await fetch("/api/orders", {
@@ -113,7 +104,6 @@ export default function CheckoutPage() {
           }),
         });
       }
-
       alert("Order placed successfully! 🎉");
       router.push("/my-orders");
     } catch (err) {
@@ -144,7 +134,6 @@ export default function CheckoutPage() {
             <ul className="space-y-3">
               {items.map((item, idx) => (
                 <li key={idx} className="flex gap-3 border-b pb-3">
-                  {/* 👇 Fixed size container para hindi mag-stretch yung image */}
                   <div style={{ width: 64, height: 64, flexShrink: 0 }}>
                     <img
                       src={item.image_url || "https://via.placeholder.com/64"}
@@ -162,7 +151,9 @@ export default function CheckoutPage() {
                     <p className="font-medium truncate">{item.name}</p>
                     <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                   </div>
-                  <p className="font-bold whitespace-nowrap">₱{(item.price * item.quantity).toLocaleString()}</p>
+                  <p className="font-bold whitespace-nowrap">
+                    ₱{(item.price * item.quantity).toLocaleString()}
+                  </p>
                 </li>
               ))}
             </ul>
@@ -218,5 +209,14 @@ export default function CheckoutPage() {
 
       </div>
     </main>
+  );
+}
+
+// ✅ Default export wraps the content in Suspense — required by Next.js
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<p className="p-8">Loading checkout...</p>}>
+      <CheckoutContent />
+    </Suspense>
   );
 }
