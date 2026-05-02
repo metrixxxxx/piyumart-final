@@ -56,6 +56,9 @@ export default function ProductCard({ product }) {
           border: "1px solid #eee",
           cursor: "pointer",
           transition: "0.2s",
+          justifyContent: "space-between",
+          display: "flex",
+          flexDirection: "column",
         }}
         onMouseEnter={(e) =>
           (e.currentTarget.style.transform = "translateY(-3px)")
@@ -111,6 +114,7 @@ export default function ProductCard({ product }) {
                 fontSize: "16px",
                 fontWeight: "700",
                 color: "#e94560",
+                textAlign: "center",
               }}
             >
               ₱{Number(product.price).toLocaleString()}
