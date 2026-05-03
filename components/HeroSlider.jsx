@@ -73,18 +73,22 @@ export default function HeroSlider() {
       <div className="relative w-full h-[400px] overflow-hidden rounded-xl">
 
         {/* IMAGE — re-keyed to trigger animation on change */}
-        <img
-          key={`img-${index}`}
-          src={
-            product.image_url?.startsWith("http")
-              ? product.image_url
-              : "https://via.placeholder.com/1200x400?text=No+Image"
-          }
-          alt={product.name}
-          className={`w-full h-full object-cover absolute inset-0 ${
-            direction === "next" ? "slide-enter-next" : "slide-enter-prev"
-          }`}
-        />
+       <img
+  key={`img-${index}`}
+  src={
+    product.image_url
+      ? product.image_url.startsWith("http")
+        ? product.image_url // ✅ external URL
+        : product.image_url.startsWith("/")
+        ? product.image_url // ✅ local file (/uploads/...)
+        : `/${product.image_url}` // ✅ fallback if missing slash
+      : "https://via.placeholder.com/1200x400?text=No+Image"
+  }
+  alt={product.name}
+  className={`w-full h-full object-cover absolute inset-0 ${
+    direction === "next" ? "slide-enter-next" : "slide-enter-prev"
+  }`}
+/>
 
         {/* OVERLAY — centered content */}
         <div

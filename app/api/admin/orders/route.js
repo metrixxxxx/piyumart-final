@@ -20,14 +20,13 @@ export async function GET() {
 
 // PUT — update order status
 export async function PUT(req) {
-  const session = await requireAdmin();
-  if (!session) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const { id, status } = await req.json();
-
   await db.query("UPDATE orders SET status = ? WHERE id = ?", [status, id]);
+
+  // ✅ Notify the user in realtime that their order status changed
+  if (global.io) {
+    global.io.emit("orders:updated", { id, status });
+  }
 
   return Response.json({ success: true });
 }

@@ -1,13 +1,14 @@
 "use client";
-import { signIn, getSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+
+import { signIn, getSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const router = useRouter(); // 👈 add this
+  const router = useRouter();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -27,68 +28,141 @@ export default function LoginPage() {
     if (res?.error) {
       setError("Invalid email or password");
     } else {
-      // 👇 Get session to check role, then redirect accordingly
       const session = await getSession();
       if (session?.user?.role === "admin") {
-        router.push("/admin/dashboard"); // admin goes to admin panel
+        router.push("/admin/dashboard");
       } else {
-        router.push("/");               // everyone else goes to shop
+        router.push("/");
       }
     }
   };
 
   return (
-    <div className="bg-blue-100 min-h-screen flex items-center justify-center p-4 md:w-4xl border rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600">
-      <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md">
-        
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">
-          Login to your account
-        </h2>
+    <div className="flex h-full w-full items-center justify-center bg-[#0f1123] p-6">
+      <div className="flex w-full max-w-3xl overflow-hidden rounded-2xl shadow-2xl">
 
-        <form onSubmit={handleLogin} className="space-y-4">
+        {/* Left: Login Panel */}
+        <div className="flex w-80 flex-shrink-0 flex-col bg-[#1a1d35] px-8 py-9">
 
-          <div>
-            <label className="block text-sm text-gray-600 mb-1">Email</label>
-            <input
-              type="email"
-              placeholder="yourname@lspu.edu.ph"
-              className="w-full px-4 py-2 border-none focus:outline-none focus:ring-2 focus:ring-blue-400"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+          {/* Brand */}
+          <div className="mb-8 text-sm font-bold tracking-widest text-white">
+            PIYU<span className="text-[#4f8ef7]">MART</span>
           </div>
 
-          <div>
-            <label className="block text-sm text-gray-600 mb-1">Password</label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+          {/* Avatar */}
+          <div className="mb-7 flex justify-center">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#252a4a]">
+              <svg width="34" height="34" viewBox="0 0 32 32" fill="none">
+                <circle cx="16" cy="12" r="6" fill="#4f8ef7" opacity="0.8" />
+                <path d="M3 28c0-7.18 5.82-13 13-13s13 5.82 13 13" stroke="#4f8ef7" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </div>
           </div>
 
-          {error && (
-            <p className="text-red-500 text-sm text-center">{error}</p>
-          )}
+          {/* Form */}
+          <form onSubmit={handleLogin} className="flex flex-col">
 
-          <button
-            type="submit"
-            className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg transition"
-          >
-            Login
-          </button>
-        </form>
+            {/* Email */}
+            <div className="relative mb-3">
+              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <rect x="1" y="3" width="12" height="9" rx="2" stroke="#4a5080" strokeWidth="1.4" />
+                <path d="M1 5l6 4 6-4" stroke="#4a5080" strokeWidth="1.4" strokeLinecap="round" />
+              </svg>
+              <input
+                type="email"
+                placeholder="yourname@lspu.edu.ph"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="h-10 w-full rounded-full border border-[#2e3460] bg-[#252a4a] pl-10 pr-4 text-xs text-[#e0e4ff] placeholder-[#4a5080] outline-none transition focus:border-[#4f8ef7]"
+              />
+            </div>
 
-        <p className="text-sm text-center text-gray-500 mt-4">
-          no account yet? {" "}
-          <a href="/register" className="text-blue-500 hover:underline">
-            Register
-          </a>
-        </p>
+            {/* Password */}
+            <div className="relative mb-3">
+              <svg className="absolute left-3.5 top-1/2 -translate-y-1/2" width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <rect x="2" y="6" width="10" height="7" rx="2" stroke="#4a5080" strokeWidth="1.4" />
+                <path d="M4.5 6V4.5a2.5 2.5 0 015 0V6" stroke="#4a5080" strokeWidth="1.4" strokeLinecap="round" />
+                <circle cx="7" cy="9.5" r="1" fill="#4a5080" />
+              </svg>
+              <input
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="h-10 w-full rounded-full border border-[#2e3460] bg-[#252a4a] pl-10 pr-4 text-sm text-[#e0e4ff] placeholder-[#4a5080] outline-none transition focus:border-[#4f8ef7]"
+              />
+            </div>
+
+            {/* Error */}
+            {error && (
+              <p className="mb-2 text-center text-[11px] text-red-400">{error}</p>
+            )}
+
+            {/* Submit */}
+            <button
+              type="submit"
+              className="mt-1 h-10 w-full rounded-full bg-[#4f8ef7] text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-[#3a7de8] active:scale-95"
+            >
+              Login
+            </button>
+
+            {/* Footer */}
+            <div className="mt-3 flex items-center justify-between">
+              <label className="flex cursor-pointer items-center gap-1.5 text-[11px] text-[#4a5080]">
+                <input type="checkbox" className="h-3 w-3 accent-[#4f8ef7]" />
+                Remember me
+              </label>
+              <button type="button" className="text-[11px] text-[#4f8ef7] hover:underline">
+                Forgot password?
+              </button>
+            </div>
+          </form>
+
+          {/* Register */}
+          <p className="mt-3.5 text-center text-[11px] text-[#4a5080]">
+            No account yet?{" "}
+            <a href="/register" className="text-[#4f8ef7] hover:underline">Register</a>
+          </p>
+
+          {/* Dots */}
+          <div className="mt-auto flex justify-center gap-1.5 pt-6">
+            <div className="h-2 w-5 rounded-full bg-[#4f8ef7]" />
+            <div className="h-2 w-2 rounded-full bg-[#2e3460]" />
+            <div className="h-2 w-2 rounded-full bg-[#2e3460]" />
+          </div>
+        </div>
+
+        {/* Right: Hero Panel */}
+        <div className="relative flex flex-1 flex-col overflow-hidden bg-[#13162b]">
+          {/* Nav */}
+          <nav className="relative z-10 flex items-center justify-end gap-5 px-5 py-4">
+            {["Home", "Cart", "Sell"].map((item) => (
+              <span key={item} className="cursor-pointer text-[10px] uppercase tracking-widest text-[#4a5080] hover:text-white">
+                {item}
+              </span>
+            ))}
+            <button className="rounded-full bg-[#4f8ef7] px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-white hover:bg-[#3a7de8]">
+              Sign In
+            </button>
+          </nav>
+
+          {/* Hero */}
+          <div className="relative z-10 mt-auto p-8">
+            <h1 className="mb-3 text-6xl font-bold leading-none tracking-tight text-white">
+              Welcome<span className="text-[#4f8ef7]">.</span>
+            </h1>
+            <p className="mb-3 max-w-[200px] text-xs leading-relaxed text-[#4a5080]">
+              Discover student deals on campus. Sign in with your LSPU email.
+            </p>
+            <p className="text-[11px] text-[#4a5080]">
+              No account yet?{" "}
+              <a href="/register" className="text-[#4f8ef7] hover:underline">Register here.</a>
+            </p>
+          </div>
+        </div>
+
       </div>
     </div>
   );

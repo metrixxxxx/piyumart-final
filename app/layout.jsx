@@ -1,6 +1,5 @@
 import "./globals.css";
 import SessionWrapper from "@/components/SessionWrapper";
-import Navbar from "@/components/ui/navbar";
 import { Suspense } from "react";
 import NavigationProgress from "@/components/NavigationProgress";
 
@@ -11,10 +10,7 @@ export default function RootLayout({ children }) {
         <Suspense>
           <NavigationProgress />
         </Suspense>
-        <SessionWrapper>
-          <Navbar />
-          {children}
-        </SessionWrapper>
+        <SessionWrapper>{children}</SessionWrapper>
       </body>
     </html>
   );

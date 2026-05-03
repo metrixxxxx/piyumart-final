@@ -42,6 +42,20 @@ export async function POST(req) {
       [name, description, price, image_url, session.user.id]
     );
 
+    // ✅ Broadcast new product to all users instantly
+    if (global.io) {
+      global.io.emit("products:new", {
+        id: result.insertId,
+        name,
+        description,
+        price,
+        image_url,
+        seller_id: session.user.id,
+        is_visible: 1,
+        STOCK: 0,
+      });
+    }
+
     return NextResponse.json({ success: true, id: result.insertId });
   } catch (err) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });

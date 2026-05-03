@@ -36,22 +36,53 @@ export const authOptions = {
         return {
           id: user.id,
           name: user.name,
+          lastName: user.last_name,
           email: user.email,
-          role: user.role, // 👈 added
+          role: user.role,
+          image: user.image || null,
+          contactNumber: user.contact_number || null,
+          address: user.address || null,
         };
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
+      // On login, store everything in the token
       if (user) {
-        token.role = user.role; // 👈 added
+        token.id = user.id;
+        token.role = user.role;
+        token.lastName = user.lastName;
+        token.image = user.image;
+        token.contactNumber = user.contactNumber;
+        token.address = user.address;
       }
+
+      // When update() is called from the profile page, re-fetch from DB
+      if (trigger === "update") {
+        const [rows] = await db.query(
+          "SELECT * FROM users WHERE id = ?",
+          [token.id]
+        );
+        if (rows[0]) {
+          const u = rows[0];
+          token.name = u.name;
+          token.lastName = u.last_name;
+          token.image = u.image;
+          token.contactNumber = u.contact_number;
+          token.address = u.address;
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
-      session.user.id = token.sub;
-      session.user.role = token.role; // 👈 added
+      session.user.id = token.id ?? token.sub;
+      session.user.role = token.role;
+      session.user.lastName = token.lastName;
+      session.user.image = token.image;
+      session.user.contactNumber = token.contactNumber;
+      session.user.address = token.address;
       return session;
     },
   },

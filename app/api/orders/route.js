@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
-// GET: fetch all orders for the logged-in user
 export async function GET() {
   try {
     const session = await getServerSession(authOptions);
@@ -13,16 +12,27 @@ export async function GET() {
     }
 
     const [rows] = await db.query(
-      `SELECT o.*, 
-              (SELECT JSON_ARRAYAGG(
-                  JSON_OBJECT('product_id', oi.product_id, 'quantity', oi.quantity, 'price', oi.price)
-               ) FROM order_items oi WHERE oi.order_id = o.id) AS items
-       FROM orders o
-       WHERE o.user_id = ?
-       ORDER BY o.id DESC`,
-      [session.user.id]
-    );
-
+  `SELECT o.*, 
+    (SELECT JSON_ARRAYAGG(
+      JSON_OBJECT(
+        'product_id', oi.product_id,
+        'quantity', oi.quantity,
+        'price', oi.price,
+        'name', p.name,
+        'image_url', COALESCE(
+          (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.sort_order ASC LIMIT 1),
+          p.image_url
+        )
+      )
+    ) FROM order_items oi 
+    LEFT JOIN products p ON p.id = oi.product_id
+    WHERE oi.order_id = o.id
+    ) AS items
+   FROM orders o
+   WHERE o.user_id = ?
+   ORDER BY o.id DESC`,
+  [session.user.id]
+);
     return NextResponse.json(rows);
   } catch (err) {
     console.error("Orders GET error:", err);
@@ -30,7 +40,6 @@ export async function GET() {
   }
 }
 
-// POST: create a new order
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
@@ -44,7 +53,29 @@ export async function POST(req) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
     }
 
-    // 1. Create order
+    // ✅ 1. Check stock for all items BEFORE doing anything
+    for (const item of items) {
+      const [rows] = await db.query(
+        `SELECT name, stock FROM products WHERE id = ?`,
+        [item.product_id]
+      );
+
+      if (!rows[0]) {
+        return NextResponse.json(
+          { error: `Product not found (ID: ${item.product_id})` },
+          { status: 404 }
+        );
+      }
+
+      if (rows[0].stock < item.quantity) {
+        return NextResponse.json(
+          { error: `"${rows[0].name}" only has ${rows[0].stock} left in stock.` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // 2. Create order
     const [result] = await db.query(
       `INSERT INTO orders (user_id, name, email, address, payment_method, total, status)
        VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
@@ -53,13 +84,28 @@ export async function POST(req) {
 
     const orderId = result.insertId;
 
-    // 2. Insert order items
+    // 3. Insert order items
     for (const item of items) {
       await db.query(
         `INSERT INTO order_items (order_id, product_id, quantity, price)
          VALUES (?, ?, ?, ?)`,
         [orderId, item.product_id, item.quantity, item.price]
       );
+    }
+
+    // ✅ 4. Deduct stock
+    for (const item of items) {
+      await db.query(
+        `UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?`,
+        [item.quantity, item.product_id, item.quantity]
+      );
+    }
+
+    // 5. Notify admin
+    if (global.io) {
+      global.io.emit("orders:new", {
+        orderId, name, email, address, payment_method, total, items,
+      });
     }
 
     return NextResponse.json({ success: true, orderId });

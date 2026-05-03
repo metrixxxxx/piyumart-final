@@ -24,7 +24,21 @@ export async function GET(req, { params }) {
       [id]
     );
 
+    // Fetch all images
+    const [images] = await db.query(
+      `SELECT image_url FROM product_images WHERE product_id = ? ORDER BY sort_order ASC`,
+      [id]
+    );
+
+    // Fetch variants
+    const [variants] = await db.query(
+      `SELECT label, image_url FROM product_variants WHERE product_id = ? ORDER BY id ASC`,
+      [id]
+    );
+
     product.attributes = attrs;
+    product.images = images.map((r) => r.image_url);
+    product.variants = variants;
 
     return Response.json(product);
   } catch (err) {

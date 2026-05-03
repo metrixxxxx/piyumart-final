@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import ProductCard from "@/components/products/ProductCard";
+import { getSocket } from "@/lib/socket";
 
 export default function ProductsPage() {
   const [products, setProducts] = useState([]);
@@ -43,6 +44,30 @@ export default function ProductsPage() {
       }
     }
     fetchProducts();
+
+    // ✅ Realtime listeners
+    const socket = getSocket();
+
+    socket.on("products:new", (newProduct) => {
+      if (session?.user?.id && String(newProduct.seller_id) === String(session.user.id)) return;
+      setProducts((prev) => [newProduct, ...prev]);
+    });
+
+    socket.on("products:updated", (updated) => {
+      setProducts((prev) =>
+        prev.map((p) => String(p.id) === String(updated.id) ? { ...p, ...updated } : p)
+      );
+    });
+
+    socket.on("products:deleted", ({ id }) => {
+      setProducts((prev) => prev.filter((p) => String(p.id) !== String(id)));
+    });
+
+    return () => {
+      socket.off("products:new");
+      socket.off("products:updated");
+      socket.off("products:deleted");
+    };
   }, [session]);
 
   const visibleProducts = selectedCategory

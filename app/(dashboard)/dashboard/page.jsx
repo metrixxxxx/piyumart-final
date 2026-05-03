@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { getSocket } from "@/lib/socket";
 
 export default function AdminDashboard() {
   const [admin, setAdmin] = useState(null);
@@ -8,7 +9,7 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedProducts, setSelectedProducts] = useState([]); // 👈 new
+  const [selectedProducts, setSelectedProducts] = useState([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -27,6 +28,38 @@ export default function AdminDashboard() {
       }
     }
     checkAdmin();
+
+    const socket = getSocket();
+
+    socket.on("connect", () => console.log("✅ Admin socket connected:", socket.id));
+    socket.on("connect_error", (err) => console.log("❌ Socket error:", err.message));
+
+    socket.on("orders:new", (order) => {
+      setOrders((prev) => [{ ...order, id: order.orderId, status: "pending" }, ...prev]);
+    });
+
+    socket.on("products:new", (product) => {
+      setProducts((prev) => [product, ...prev]);
+    });
+
+    socket.on("products:deleted", ({ id }) => {
+      setProducts((prev) => prev.filter((p) => String(p.id) !== String(id)));
+    });
+
+    socket.on("products:updated", (updated) => {
+      setProducts((prev) =>
+        prev.map((p) => String(p.id) === String(updated.id) ? { ...p, ...updated } : p)
+      );
+    });
+
+    return () => {
+      socket.off("connect");
+      socket.off("connect_error");
+      socket.off("orders:new");
+      socket.off("products:new");
+      socket.off("products:deleted");
+      socket.off("products:updated");
+    };
   }, []);
 
   async function fetchData() {
@@ -49,35 +82,30 @@ export default function AdminDashboard() {
     router.push("/admin/login");
   }
 
-  // ----------------------------
-  // SINGLE DELETE PRODUCT
-  // ----------------------------
   async function handleDeleteProduct(id) {
-    if (!confirm("Delete this product?")) return;
-    await fetch(`/api/admin/products/${id}`, { method: "DELETE" });
-    setSelectedProducts((prev) => prev.filter((sid) => sid !== id));
-    fetchData();
-  }
+  if (!confirm("Delete this product?")) return;
+  const res = await fetch(`/api/admin/products/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  console.log("Before filter, products count:", products.length);
+  setProducts((prev) => {
+    console.log("Filtering, prev ids:", prev.map(p => p.id), "removing:", id);
+    return prev.filter((p) => String(p.id) !== String(id));
+  });
+  setSelectedProducts((prev) => prev.filter((sid) => String(sid) !== String(id)));
+}
 
-  // ----------------------------
-  // BULK DELETE PRODUCTS
-  // ----------------------------
   async function handleBulkDeleteProducts() {
     if (selectedProducts.length === 0) return;
     if (!confirm(`Delete ${selectedProducts.length} selected product(s)?`)) return;
-
     await Promise.all(
       selectedProducts.map((id) =>
         fetch(`/api/admin/products/${id}`, { method: "DELETE" })
       )
     );
+    setProducts((prev) => prev.filter((p) => !selectedProducts.map(String).includes(String(p.id))));
     setSelectedProducts([]);
-    fetchData();
   }
 
-  // ----------------------------
-  // CHECKBOX HANDLERS
-  // ----------------------------
   function toggleSelectProduct(id) {
     setSelectedProducts((prev) =>
       prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]
@@ -104,7 +132,9 @@ export default function AdminDashboard() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, status }),
     });
-    fetchData();
+    setOrders((prev) =>
+      prev.map((o) => o.id === id ? { ...o, status } : o)
+    );
   }
 
   if (loading) return <p className="p-8">Loading dashboard...</p>;
@@ -194,7 +224,6 @@ export default function AdminDashboard() {
       {/* Products Table */}
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">All Products</h2>
-        {/* 👇 Bulk delete button — lalabas lang kapag may selected */}
         {selectedProducts.length > 0 && (
           <button
             onClick={handleBulkDeleteProducts}
@@ -208,7 +237,6 @@ export default function AdminDashboard() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b">
             <tr>
-              {/* 👇 Select All checkbox */}
               <th className="p-4 w-8">
                 <input
                   type="checkbox"
@@ -230,7 +258,6 @@ export default function AdminDashboard() {
                   selectedProducts.includes(product.id) ? "bg-red-50" : ""
                 }`}
               >
-                {/* 👇 Per item checkbox */}
                 <td className="p-4">
                   <input
                     type="checkbox"
@@ -245,33 +272,31 @@ export default function AdminDashboard() {
                   />
                   {product.name}
                 </td>
+                <td className="p-4">₱{Number(product.price).toLocaleString()}</td>
+                <td className="p-4">{product.seller_name || "—"}</td>
                 <td className="p-4 flex gap-3 items-center">
-  <button
-    onClick={() => handleDeleteProduct(product.id)}
-    className="text-red-500 hover:underline text-sm"
-  >
-    Delete
-  </button>
-
-  <button
-    onClick={async () => {
-      await fetch("/api/admin/products/feature", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: product.id }),
-      });
-
-      fetchData(); // refresh table
-    }}
-    className={`text-sm px-2 py-1 rounded ${
-      product.is_featured
-        ? "bg-yellow-400 text-black"
-        : "bg-gray-200"
-    }`}
-  >
-    {product.is_featured ? "Featured ⭐" : "Feature"}
-  </button>
-</td>
+                  <button
+                    onClick={() => handleDeleteProduct(product.id)}
+                    className="text-red-500 hover:underline text-sm"
+                  >
+                    Delete
+                  </button>
+                  <button
+                    onClick={async () => {
+                      await fetch("/api/admin/products/feature", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id: product.id }),
+                      });
+                      fetchData();
+                    }}
+                    className={`text-sm px-2 py-1 rounded ${
+                      product.is_featured ? "bg-yellow-400 text-black" : "bg-gray-200"
+                    }`}
+                  >
+                    {product.is_featured ? "Featured ⭐" : "Feature"}
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>

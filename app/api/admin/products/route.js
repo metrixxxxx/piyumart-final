@@ -34,5 +34,10 @@ export async function DELETE(req) {
 
   await db.query("DELETE FROM products WHERE id = ?", [id]);
 
+  // ✅ Notify all users a product was removed
+  if (global.io) {
+    global.io.emit("products:deleted", { id });
+  }
+
   return Response.json({ success: true });
 }
