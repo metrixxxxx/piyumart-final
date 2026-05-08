@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/admin";
+import { notify } from "@/lib/notify";
 
 // GET — all orders
 export async function GET() {
@@ -23,7 +24,26 @@ export async function PUT(req) {
   const { id, status } = await req.json();
   await db.query("UPDATE orders SET status = ? WHERE id = ?", [status, id]);
 
-  // ✅ Notify the user in realtime that their order status changed
+  // Notify the buyer
+  const [orderRows] = await db.query(
+    "SELECT user_id FROM orders WHERE id = ?",
+    [id]
+  );
+
+  if (orderRows[0]) {
+    const statusLabels = {
+      pending: "Pending",
+      otw: "On the way",
+      delivered: "Delivered",
+    };
+    await notify({
+      userId: orderRows[0].user_id,
+      type: "order_status",
+      message: `Your order #${id} is now ${statusLabels[status] || status}.`,
+    });
+  }
+
+  // Emit to admin dashboard via socket
   if (global.io) {
     global.io.emit("orders:updated", { id, status });
   }

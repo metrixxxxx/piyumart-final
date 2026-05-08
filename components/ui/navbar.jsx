@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useRef, useEffect } from "react";
+import NotificationBell from "@/components/NotificationBell";
 
 export default function Navbar() {
   const { data: session } = useSession();
@@ -17,7 +18,6 @@ export default function Navbar() {
       isActive(path) ? "text-blue-400 font-semibold" : "text-white"
     }`;
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -36,6 +36,8 @@ export default function Navbar() {
         <Link href="/" className={linkStyle("/")}>Home</Link>
         <Link href="/cart" className={linkStyle("/cart")}>Cart</Link>
         <Link href="/my-orders" className={linkStyle("/my-orders")}>My Orders</Link>
+
+        {session && <NotificationBell />}
 
         {session ? (
           <div className="relative" ref={dropdownRef}>

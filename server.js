@@ -1,4 +1,3 @@
-// server.js
 const { createServer } = require("http");
 const { parse } = require("url");
 const next = require("next");
@@ -18,13 +17,20 @@ app.prepare().then(() => {
     cors: { origin: "*", methods: ["GET", "POST"] },
   });
 
-  global.io = io; // accessible in all API routes
+  global.io = io;
 
   io.on("connection", (socket) => {
     console.log("🟢 Connected:", socket.id);
+
+    socket.on("join", (userId) => {
+      socket.join(`user_${userId}`);
+      console.log(`User ${userId} joined room user_${userId}`);
+    });
+
     socket.onAny((event, ...args) => {
       console.log("📡 Event emitted:", event, args);
     });
+
     socket.on("disconnect", () => console.log("🔴 Disconnected:", socket.id));
   });
 

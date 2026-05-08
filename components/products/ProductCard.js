@@ -101,7 +101,7 @@ export default function ProductCard({ product }) {
           </p>
 
           <div style={{ marginTop: "10px" }}>
-            <p style={{ fontSize: "16px", fontWeight: "700", color: "#e94560", textAlign: "center" }}>
+            <p style={{ fontSize: "16px", fontWeight: "700", color: "#e94560", textAlign: "left" }}>
               ₱{Number(product.price).toLocaleString()}
             </p>
             <p style={{ fontSize: "11px", color: "#999" }}>

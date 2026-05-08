@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { notify } from "@/lib/notify";
 
 export async function GET() {
   try {
@@ -12,27 +13,28 @@ export async function GET() {
     }
 
     const [rows] = await db.query(
-  `SELECT o.*, 
-    (SELECT JSON_ARRAYAGG(
-      JSON_OBJECT(
-        'product_id', oi.product_id,
-        'quantity', oi.quantity,
-        'price', oi.price,
-        'name', p.name,
-        'image_url', COALESCE(
-          (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.sort_order ASC LIMIT 1),
-          p.image_url
-        )
-      )
-    ) FROM order_items oi 
-    LEFT JOIN products p ON p.id = oi.product_id
-    WHERE oi.order_id = o.id
-    ) AS items
-   FROM orders o
-   WHERE o.user_id = ?
-   ORDER BY o.id DESC`,
-  [session.user.id]
-);
+      `SELECT o.*, 
+        (SELECT JSON_ARRAYAGG(
+          JSON_OBJECT(
+            'product_id', oi.product_id,
+            'quantity', oi.quantity,
+            'price', oi.price,
+            'name', p.name,
+            'image_url', COALESCE(
+              (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id ORDER BY pi.sort_order ASC LIMIT 1),
+              p.image_url
+            )
+          )
+        ) FROM order_items oi 
+        LEFT JOIN products p ON p.id = oi.product_id
+        WHERE oi.order_id = o.id
+        ) AS items
+       FROM orders o
+       WHERE o.user_id = ?
+       ORDER BY o.id DESC`,
+      [session.user.id]
+    );
+
     return NextResponse.json(rows);
   } catch (err) {
     console.error("Orders GET error:", err);
@@ -53,7 +55,7 @@ export async function POST(req) {
       return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
     }
 
-    // ✅ 1. Check stock for all items BEFORE doing anything
+    // 1. Check stock for all items BEFORE doing anything
     for (const item of items) {
       const [rows] = await db.query(
         `SELECT name, stock FROM products WHERE id = ?`,
@@ -93,15 +95,46 @@ export async function POST(req) {
       );
     }
 
-    // ✅ 4. Deduct stock
+    // 4. Deduct stock + notify sellers
     for (const item of items) {
       await db.query(
         `UPDATE products SET stock = stock - ? WHERE id = ? AND stock >= ?`,
         [item.quantity, item.product_id, item.quantity]
       );
+
+      // Get updated product info
+      const [productRows] = await db.query(
+        `SELECT seller_id, name, stock FROM products WHERE id = ?`,
+        [item.product_id]
+      );
+      const product = productRows[0];
+      if (!product) continue;
+
+      // Notify seller — someone bought their product
+      await notify({
+        userId: product.seller_id,
+        type: "order",
+        message: `Someone bought your product "${product.name}" x${item.quantity}`,
+      });
+
+      // Notify seller — low stock warning (threshold: 5)
+      if (product.stock <= 5) {
+        await notify({
+          userId: product.seller_id,
+          type: "low_stock",
+          message: `⚠️ Low stock: "${product.name}" only has ${product.stock} left.`,
+        });
+      }
     }
 
-    // 5. Notify admin
+    // 5. Notify buyer — order placed
+    await notify({
+      userId: session.user.id,
+      type: "order_placed",
+      message: `Your order #${orderId} has been placed successfully! Total: ₱${Number(total).toLocaleString()}`,
+    });
+
+    // 6. Emit to admin dashboard via socket
     if (global.io) {
       global.io.emit("orders:new", {
         orderId, name, email, address, payment_method, total, items,

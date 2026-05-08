@@ -1,40 +1,32 @@
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/authOptions";
 import { db } from "@/lib/db";
+import { requireAdmin } from "@/lib/admin";
 
-export async function GET(req) {
-  const session = await getServerSession(authOptions);
-
-  console.log("SESSION:", session); // 👈 check this
-
+export async function GET() {
+  const session = await requireAdmin();
   if (!session) {
-    return new Response("Unauthorized", { status: 401 });
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (session.user?.email !== process.env.ADMIN_EMAIL) {
-    return new Response("Forbidden", { status: 403 });
-  }
-
-  const [rows] = await db.query("SELECT * FROM products");
+  const [rows] = await db.query(`
+    SELECT p.*, c.name as category_name
+    FROM products p
+    LEFT JOIN categories c ON p.category_id = c.id
+    ORDER BY p.id DESC
+  `);
 
   return Response.json(rows);
 }
+
 export async function DELETE(req) {
-  const session = await getServerSession(authOptions);
-
+  const session = await requireAdmin();
   if (!session) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-
-  if (session.user?.email !== process.env.ADMIN_EMAIL) {
-    return new Response("Forbidden", { status: 403 });
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const { id } = await req.json();
 
   await db.query("DELETE FROM products WHERE id = ?", [id]);
 
-  // ✅ Notify all users a product was removed
   if (global.io) {
     global.io.emit("products:deleted", { id });
   }
