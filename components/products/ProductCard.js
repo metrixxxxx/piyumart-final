@@ -2,12 +2,16 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useSentiment } from '@/app/hooks/useSentiment';
 
 export default function ProductCard({ product }) {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const { data: session } = useSession();
   const router = useRouter();
+
+  // ✅ added
+  const { analyze, result: sentiment, loading: sentimentLoading } = useSentiment();
 
   const isOutOfStock = product.stock === 0;
 
@@ -99,6 +103,38 @@ export default function ProductCard({ product }) {
           <p style={{ fontSize: "12px", color: "#777", height: "32px", overflow: "hidden" }}>
             {product.description}
           </p>
+
+          {/* ✅ SENTIMENT BADGE */}
+          <div style={{ marginTop: "6px", display: "flex", alignItems: "center", gap: "6px" }}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                analyze(product.description);
+              }}
+              disabled={sentimentLoading || !product.description}
+              style={{
+                fontSize: "10px",
+                padding: "3px 8px",
+                borderRadius: "999px",
+                border: "1px solid #ddd",
+                background: "#f9f9f9",
+                cursor: "pointer",
+                color: "#555",
+              }}
+            >
+              {sentimentLoading ? "..." : "🔍 Vibe check"}
+            </button>
+
+            {sentiment && (
+              <span style={{
+                fontSize: "10px",
+                fontWeight: "600",
+                color: sentiment.label === "POSITIVE" ? "#16a34a" : "#e94560",
+              }}>
+                {sentiment.label === "POSITIVE" ? "😊 Good" : "😞 Poor"} {(sentiment.score * 100).toFixed(0)}%
+              </span>
+            )}
+          </div>
 
           <div style={{ marginTop: "10px" }}>
             <p style={{ fontSize: "16px", fontWeight: "700", color: "#e94560", textAlign: "left" }}>

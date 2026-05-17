@@ -241,27 +241,45 @@ export default function OrdersPage() {
         ) : (
           <>
             {/* FILTER TABS */}
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
-              {["all", "pending", "confirmed", "shipped", "completed", "cancelled"].map((s) => {
-                const count = s === "all" ? orders.length : (statusCounts[s] || 0);
-                if (s !== "all" && !statusCounts[s]) return null;
-                return (
-                  <button
-                    key={s}
-                    onClick={() => setFilter(s)}
-                    style={{
-                      padding: "7px 14px", borderRadius: "999px", fontSize: "13px", fontWeight: "600",
-                      border: "1px solid", cursor: "pointer", transition: "all 0.15s",
-                      borderColor: filter === s ? "#1a1a2e" : "#e5e7eb",
-                      background: filter === s ? "#1a1a2e" : "#fff",
-                      color: filter === s ? "#fff" : "#374151",
-                    }}
-                  >
-                    {s.charAt(0).toUpperCase() + s.slice(1)} {count > 0 && `(${count})`}
-                  </button>
-                );
-              })}
-            </div>
+<div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
+  {/* ALL tab */}
+  <button
+    onClick={() => setFilter("all")}
+    style={{
+      padding: "7px 14px", borderRadius: "999px", fontSize: "13px", fontWeight: "600",
+      border: "1px solid", cursor: "pointer", transition: "all 0.15s",
+      borderColor: filter === "all" ? "#1a1a2e" : "#e5e7eb",
+      background: filter === "all" ? "#1a1a2e" : "#fff",
+      color: filter === "all" ? "#fff" : "#374151",
+    }}
+  >
+    All ({orders.length})
+  </button>
+
+  {/* STATUS tabs — show lahat, grey out kung wala */}
+  {Object.entries(STATUS_CONFIG).map(([key, config]) => {
+    const count = statusCounts[key] || 0;
+    const isActive = filter === key;
+
+    return (
+      <button
+        key={key}
+        onClick={() => setFilter(key)}
+        disabled={count === 0}
+        style={{
+          padding: "7px 14px", borderRadius: "999px", fontSize: "13px", fontWeight: "600",
+          border: "1px solid", cursor: count === 0 ? "default" : "pointer", transition: "all 0.15s",
+          borderColor: isActive ? config.dot : "#e5e7eb",
+          background: isActive ? config.bg : "#fff",
+          color: isActive ? config.color : count === 0 ? "#ccc" : "#374151",
+          opacity: count === 0 ? 0.5 : 1,
+        }}
+      >
+        {config.label} {count > 0 && `(${count})`}
+      </button>
+    );
+  })}
+</div>
 
             {/* ORDERS LIST */}
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>

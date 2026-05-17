@@ -139,37 +139,9 @@ export default function RegisterPage() {
               />
             </div>
 
-            {/* Contact Number */}
-            <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2" width="13" height="13" viewBox="0 0 14 14" fill="none">
-                <rect x="3" y="1" width="8" height="12" rx="2" stroke="#4a5080" strokeWidth="1.4"/>
-                <circle cx="7" cy="10.5" r="0.8" fill="#4a5080"/>
-              </svg>
-              <input
-                type="tel"
-                placeholder="Contact number"
-                value={form.contactNumber}
-                onChange={update("contactNumber")}
-                required
-                className="h-9 w-full rounded-full border border-[#2e3460] bg-[#252a4a] pl-9 pr-4 text-xs text-[#e0e4ff] placeholder-[#4a5080] outline-none transition focus:border-[#4f8ef7]"
-              />
-            </div>
+            
 
-            {/* Address */}
-            <div className="relative">
-              <svg className="absolute left-3 top-3" width="13" height="13" viewBox="0 0 14 14" fill="none">
-                <path d="M7 1C4.79 1 3 2.79 3 5c0 3.25 4 8 4 8s4-4.75 4-8c0-2.21-1.79-4-4-4z" stroke="#4a5080" strokeWidth="1.4"/>
-                <circle cx="7" cy="5" r="1.5" stroke="#4a5080" strokeWidth="1.2"/>
-              </svg>
-              <textarea
-                placeholder="Address"
-                value={form.address}
-                onChange={update("address")}
-                required
-                rows={2}
-                className="w-full resize-none rounded-2xl border border-[#2e3460] bg-[#252a4a] pl-9 pr-4 pt-2.5 pb-2 text-xs text-[#e0e4ff] placeholder-[#4a5080] outline-none transition focus:border-[#4f8ef7]"
-              />
-            </div>
+            
 
             {/* Password & Confirm */}
             <div className="flex gap-2">

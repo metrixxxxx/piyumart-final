@@ -4,7 +4,6 @@ import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import { writeFile, mkdir } from "fs/promises";
 import path from "path";
 
-// Helper — saves a file to /public/uploads and returns its public URL
 async function saveFile(file) {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
@@ -37,17 +36,14 @@ export async function GET() {
            WHERE pa.product_id = ?`,
           [product.id]
         );
-
         const [images] = await db.query(
           `SELECT image_url FROM product_images WHERE product_id = ? ORDER BY sort_order ASC`,
           [product.id]
         );
-
         const [variants] = await db.query(
           `SELECT label, image_url FROM product_variants WHERE product_id = ? ORDER BY id ASC`,
           [product.id]
         );
-
         return {
           ...product,
           attributes: attrs,
@@ -70,16 +66,15 @@ export async function POST(req) {
 
     const formData = await req.formData();
 
-    const name        = formData.get("name");
-    const description = formData.get("description");
-    const price       = formData.get("price");
-    const category_id = formData.get("category_id");
-    const stock       = parseInt(formData.get("stock")) || 0;
-    const is_visible  = parseInt(formData.get("is_visible")) ?? 1;
-    const attributes  = JSON.parse(formData.get("attributes") || "[]");
+    const name         = formData.get("name");
+    const description  = formData.get("description");
+    const price        = formData.get("price");
+    const category_id  = formData.get("category_id");
+    const stock        = parseInt(formData.get("stock")) || 0;
+    const is_visible   = parseInt(formData.get("is_visible")) ?? 1;
+    const attributes   = JSON.parse(formData.get("attributes") || "[]");
     const variantCount = parseInt(formData.get("variant_count")) || 0;
 
-    // Save main images
     const imageFiles = formData.getAll("images");
     const imageUrls = [];
     for (const file of imageFiles) {
@@ -89,17 +84,18 @@ export async function POST(req) {
       }
     }
 
-    // Use first image as the legacy image_url for backwards compatibility
     const image_url = imageUrls[0] || null;
 
+    // ✅ instant live — is_visible = 1, status = 'approved'
     const [result] = await db.query(
-      "INSERT INTO products (name, description, price, image_url, seller_id, seller_name, category_id, stock, is_visible) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [name, description, price, image_url, session.user.id, session.user.name, category_id, stock, is_visible]
+      `INSERT INTO products 
+        (name, description, price, image_url, seller_id, seller_name, category_id, stock, is_visible, status) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 'approved')`,
+      [name, description, price, image_url, session.user.id, session.user.name, category_id, stock]
     );
 
     const product_id = result.insertId;
 
-    // Save all images to product_images table
     if (imageUrls.length > 0) {
       await Promise.all(
         imageUrls.map((url, i) =>
@@ -111,7 +107,6 @@ export async function POST(req) {
       );
     }
 
-    // Save variants
     for (let i = 0; i < variantCount; i++) {
       const label = formData.get(`variant_label_${i}`);
       const variantFile = formData.get(`variant_image_${i}`);
@@ -127,7 +122,6 @@ export async function POST(req) {
       }
     }
 
-    // Save attributes
     if (attributes.length > 0) {
       await Promise.all(
         attributes.map(({ attribute_definition_id, value }) => {
@@ -140,17 +134,19 @@ export async function POST(req) {
       );
     }
 
+    // ✅ broadcast instantly to all users
     if (global.io) {
       global.io.emit("products:new", {
         id: product_id, name, description, price, image_url,
         images: imageUrls, category_id, stock,
         seller_id: session.user.id,
         seller_name: session.user.name,
-        is_visible,
+        is_visible: 1,
+        status: "approved",
       });
     }
 
-    return Response.json({ success: true });
+    return Response.json({ success: true, id: product_id });
   } catch (err) {
     return Response.json({ error: err.message }, { status: 500 });
   }
@@ -163,17 +159,16 @@ export async function PUT(req) {
 
     const formData = await req.formData();
 
-    const id          = formData.get("id");
-    const name        = formData.get("name");
-    const description = formData.get("description");
-    const price       = formData.get("price");
-    const category_id = formData.get("category_id");
-    const stock       = parseInt(formData.get("stock")) || 0;
-    const is_visible  = parseInt(formData.get("is_visible")) ?? 1;
-    const attributes  = JSON.parse(formData.get("attributes") || "[]");
+    const id           = formData.get("id");
+    const name         = formData.get("name");
+    const description  = formData.get("description");
+    const price        = formData.get("price");
+    const category_id  = formData.get("category_id");
+    const stock        = parseInt(formData.get("stock")) || 0;
+    const is_visible   = parseInt(formData.get("is_visible")) ?? 1;
+    const attributes   = JSON.parse(formData.get("attributes") || "[]");
     const variantCount = parseInt(formData.get("variant_count")) || 0;
 
-    // Save new main images (if any new files uploaded)
     const imageFiles = formData.getAll("images");
     const newImageUrls = [];
     for (const file of imageFiles) {
@@ -183,7 +178,6 @@ export async function PUT(req) {
       }
     }
 
-    // Determine image_url — use first new upload, or keep existing
     let image_url = formData.get("existing_image_url") || null;
     if (newImageUrls.length > 0) image_url = newImageUrls[0];
 
@@ -192,7 +186,6 @@ export async function PUT(req) {
       [name, description, price, image_url, category_id, stock, is_visible, id, session.user.id]
     );
 
-    // Replace images if new ones were uploaded
     if (newImageUrls.length > 0) {
       await db.query("DELETE FROM product_images WHERE product_id = ?", [id]);
       await Promise.all(
@@ -205,7 +198,6 @@ export async function PUT(req) {
       );
     }
 
-    // Replace variants
     await db.query("DELETE FROM product_variants WHERE product_id = ?", [id]);
     for (let i = 0; i < variantCount; i++) {
       const label = formData.get(`variant_label_${i}`);
@@ -222,7 +214,6 @@ export async function PUT(req) {
       }
     }
 
-    // Replace attributes
     await db.query("DELETE FROM product_attributes WHERE product_id = ?", [id]);
     if (attributes.length > 0) {
       await Promise.all(
@@ -267,7 +258,7 @@ export async function DELETE(req) {
 
     return Response.json({ success: true });
   } catch (err) {
-  console.error("❌ API Error:", err.message, err.stack);
-  return Response.json({ error: err.message }, { status: 500 });
-}
+    console.error("❌ API Error:", err.message, err.stack);
+    return Response.json({ error: err.message }, { status: 500 });
+  }
 }

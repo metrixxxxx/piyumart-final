@@ -26,38 +26,3 @@ export async function GET() {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
-
-export async function POST(req) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await req.json();
-    const { name, description, price, image_url } = body;
-
-    const [result] = await db.query(
-      "INSERT INTO products (name, description, price, image_url, seller_id, is_visible, STOCK) VALUES (?, ?, ?, ?, ?, 1, 0)",
-      [name, description, price, image_url, session.user.id]
-    );
-
-    // ✅ Broadcast new product to all users instantly
-    if (global.io) {
-      global.io.emit("products:new", {
-        id: result.insertId,
-        name,
-        description,
-        price,
-        image_url,
-        seller_id: session.user.id,
-        is_visible: 1,
-        STOCK: 0,
-      });
-    }
-
-    return NextResponse.json({ success: true, id: result.insertId });
-  } catch (err) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
-  }
-}

@@ -61,14 +61,9 @@ export async function POST(req) {
         `SELECT name, stock FROM products WHERE id = ?`,
         [item.product_id]
       );
-
       if (!rows[0]) {
-        return NextResponse.json(
-          { error: `Product not found (ID: ${item.product_id})` },
-          { status: 404 }
-        );
+        return NextResponse.json({ error: `Product not found (ID: ${item.product_id})` }, { status: 404 });
       }
-
       if (rows[0].stock < item.quantity) {
         return NextResponse.json(
           { error: `"${rows[0].name}" only has ${rows[0].stock} left in stock.` },
@@ -77,7 +72,7 @@ export async function POST(req) {
       }
     }
 
-    // 2. Create order
+    // 2. Create order — status starts as 'pending' (seller must approve)
     const [result] = await db.query(
       `INSERT INTO orders (user_id, name, email, address, payment_method, total, status)
        VALUES (?, ?, ?, ?, ?, ?, 'pending')`,
@@ -102,7 +97,6 @@ export async function POST(req) {
         [item.quantity, item.product_id, item.quantity]
       );
 
-      // Get updated product info
       const [productRows] = await db.query(
         `SELECT seller_id, name, stock FROM products WHERE id = ?`,
         [item.product_id]
@@ -110,14 +104,14 @@ export async function POST(req) {
       const product = productRows[0];
       if (!product) continue;
 
-      // Notify seller — someone bought their product
+      // Notify seller — new order needs their approval
       await notify({
         userId: product.seller_id,
         type: "order",
-        message: `Someone bought your product "${product.name}" x${item.quantity}`,
+        message: `New order #${orderId} for "${product.name}" x${item.quantity} — please approve it in My Listings.`,
       });
 
-      // Notify seller — low stock warning (threshold: 5)
+      // Notify seller — low stock warning
       if (product.stock <= 5) {
         await notify({
           userId: product.seller_id,
@@ -127,19 +121,12 @@ export async function POST(req) {
       }
     }
 
-    // 5. Notify buyer — order placed
+    // 5. Notify buyer — order placed, waiting for seller
     await notify({
       userId: session.user.id,
       type: "order_placed",
-      message: `Your order #${orderId} has been placed successfully! Total: ₱${Number(total).toLocaleString()}`,
+      message: `Your order #${orderId} has been placed! Total: ₱${Number(total).toLocaleString()}. Waiting for seller approval.`,
     });
-
-    // 6. Emit to admin dashboard via socket
-    if (global.io) {
-      global.io.emit("orders:new", {
-        orderId, name, email, address, payment_method, total, items,
-      });
-    }
 
     return NextResponse.json({ success: true, orderId });
   } catch (err) {

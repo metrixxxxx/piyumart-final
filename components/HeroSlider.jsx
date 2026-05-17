@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import Link from 'next/link';
 
 export default function HeroSlider() {
   const [products, setProducts] = useState([]);
@@ -108,10 +109,14 @@ export default function HeroSlider() {
           <p className="text-blue-300 mt-2 font-semibold">
             ₱{Number(product.price).toLocaleString()}
           </p>
-
-          <button className="mt-4 bg-blue-500 px-4 py-2 rounded hover:bg-blue-600">
+            
+          <Link
+            href={`/products/${product.id}`}
+            className="mt-4 inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded"
+          >
             View Product
-          </button>
+          </Link>
+
         </div>
 
         {/* PREV / NEXT ARROWS */}

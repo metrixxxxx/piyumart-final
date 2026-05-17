@@ -138,7 +138,7 @@ export default function LoginPage() {
         <div className="relative flex flex-1 flex-col overflow-hidden bg-[#13162b]">
           {/* Nav */}
           <nav className="relative z-10 flex items-center justify-end gap-5 px-5 py-4">
-            {["Home", "Cart", "Sell"].map((item) => (
+            {["About Us"].map((item) => (
               <span key={item} className="cursor-pointer text-[10px] uppercase tracking-widest text-[#4a5080] hover:text-white">
                 {item}
               </span>
